@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>都道府県別 窃盗犯罪率ランキング｜令和6年・警察庁データ</title>
+<style>
+  :root {
+    --bg:        #080b10;
+    --surface:   #0e1318;
+    --border:    #1e2530;
+    --text:      #d8dde6;
+    --muted:     #5a6475;
+    --accent:    #c8a84b;
+    --avg-line:  #4a8fc8;
+    --high1:     #c0392b;
+    --high2:     #e74c3c;
+    --high3:     #e67e22;
+    --low1:      #1a6fa8;
+    --low2:      #2980b9;
+    --low3:      #3498db;
+    --font-head: 'Noto Serif JP', 'Yu Mincho', '游明朝', serif;
+    --font-body: 'BIZ UDPGothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    background: linear-gradient(160deg, #0d1520 0%, #080b10 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 20px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 200px;
+    background: radial-gradient(ellipse, rgba(200,168,75,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-label {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    border: 1px solid rgba(200,168,75,0.4);
+    padding: 3px 12px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: var(--font-head);
+    font-size: clamp(16px, 4vw, 22px);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1.4;
+    color: #eef0f4;
+  }
+  .header-sub {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── サマリーカード ── */
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 20px 16px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card {
+    flex: 1 1 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+  }
+  .card-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .card-value {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 700;
+    color: #eef0f4;
+  }
+  .card-unit {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .card-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .card.avg { border-color: rgba(74,143,200,0.5); }
+  .card.avg .card-value { color: var(--avg-line); }
+  .card.top { border-color: rgba(192,57,43,0.5); }
+  .card.top .card-value { color: #e05a4a; }
+  .card.bot { border-color: rgba(26,111,168,0.5); }
+  .card.bot .card-value { color: var(--low2); }
+
+  /* ── 検索・コントロール ── */
+  .controls {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 16px 16px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-wrap {
+    position: relative;
+    flex: 1 1 200px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+    pointer-events: none;
+  }
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 9px 12px 9px 34px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+  .result-count {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ── テーブル ── */
+  .table-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 16px 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead tr {
+    background: #0d1520;
+    border-bottom: 2px solid var(--border);
+  }
+  thead th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    white-space: nowrap;
+    user-select: none;
+  }
+  thead th.sortable {
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  thead th.sortable:hover { color: var(--accent); }
+  thead th.sort-asc::after  { content: ' ▲'; color: var(--accent); }
+  thead th.sort-desc::after { content: ' ▼'; color: var(--accent); }
+  th.num, td.num { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+  tbody td {
+    padding: 10px 12px;
+    white-space: nowrap;
+  }
+
+  /* 順位バッジ */
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #141b24;
+    color: var(--muted);
+  }
+
+  /* ハイライト行 */
+  tr.top1 { background: rgba(192,57,43,0.18); }
+  tr.top1 .rank-badge { background: var(--high1); color: #fff; }
+  tr.top2 { background: rgba(231,76,60,0.12); }
+  tr.top2 .rank-badge { background: var(--high2); color: #fff; }
+  tr.top3 { background: rgba(230,126,34,0.10); }
+  tr.top3 .rank-badge { background: var(--high3); color: #fff; }
+  tr.top4 { background: rgba(192,57,43,0.06); }
+  tr.top5 { background: rgba(192,57,43,0.04); }
+
+  tr.bot1 { background: rgba(26,111,168,0.18); }
+  tr.bot1 .rank-badge { background: var(--low1); color: #fff; }
+  tr.bot2 { background: rgba(41,128,185,0.12); }
+  tr.bot2 .rank-badge { background: var(--low2); color: #fff; }
+  tr.bot3 { background: rgba(52,152,219,0.10); }
+  tr.bot3 .rank-badge { background: var(--low3); color: #fff; }
+  tr.bot4 { background: rgba(26,111,168,0.06); }
+  tr.bot5 { background: rgba(26,111,168,0.04); }
+
+  /* 全国平均行 */
+  tr.avg-row {
+    background: rgba(74,143,200,0.12) !important;
+    border-top: 1px solid rgba(74,143,200,0.4);
+    border-bottom: 1px solid rgba(74,143,200,0.4);
+  }
+  tr.avg-row td { color: var(--avg-line); font-weight: 700; }
+  .avg-tag {
+    display: inline-block;
+    font-size: 10px;
+    background: rgba(74,143,200,0.25);
+    color: var(--avg-line);
+    border: 1px solid rgba(74,143,200,0.4);
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  /* バーグラフ */
+  .bar-wrap {
+    width: 80px;
+    background: #141b24;
+    border-radius: 2px;
+    height: 6px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--muted);
+    transition: width 0.3s ease;
+  }
+  tr.top1 .bar-fill { background: var(--high1); }
+  tr.top2 .bar-fill { background: var(--high2); }
+  tr.top3 .bar-fill { background: var(--high3); }
+  tr.top4 .bar-fill, tr.top5 .bar-fill { background: #c0552a; }
+  tr.bot1 .bar-fill { background: var(--low1); }
+  tr.bot2 .bar-fill { background: var(--low2); }
+  tr.bot3 .bar-fill { background: var(--low3); }
+  tr.bot4 .bar-fill, tr.bot5 .bar-fill { background: #3a8abf; }
+
+  /* 凡例 */
+  .legend {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 16px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* フッター */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  footer a { color: var(--muted); text-decoration: underline; }
+  .channel-tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    border: 1px solid rgba(200,168,75,0.3);
+    padding: 2px 10px;
+    margin-bottom: 10px;
+  }
+
+  /* 非表示 */
+  .hidden { display: none !important; }
+
+  /* モバイル調整 */
+  @media (max-width: 600px) {
+    .bar-wrap { display: none; }
+    thead th:nth-child(5) { display: none; }
+    tbody td:nth-child(5) { display: none; }
+    h1 { font-size: 15px; }
+    .card-value { font-size: 17px; }
+    tbody td, thead th { padding: 9px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">日本安全白書 ／ データアーカイブ</div>
+  <h1>都道府県別 窃盗犯罪率ランキング<br>令和6年（2024年）・警察庁データ</h1>
+  <div class="header-sub">人口10万人あたり認知件数による比較　全47都道府県</div>
+</header>
+
+<div class="summary">
+  <div class="card">
+    <div class="card-label">集計対象年度</div>
+    <div class="card-value">令和6年</div>
+    <div class="card-sub">確定値（2024年）</div>
+  </div>
+  <div class="card">
+    <div class="card-label">全国 窃盗認知件数</div>
+    <div class="card-value">501,507<span class="card-unit">件</span></div>
+    <div class="card-sub">刑法犯全体の約68%</div>
+  </div>
+  <div class="card avg">
+    <div class="card-label">全国平均（10万人あたり）</div>
+    <div class="card-value">401.5<span class="card-unit">件</span></div>
+    <div class="card-sub">表内に平均ラインを表示</div>
+  </div>
+  <div class="card top">
+    <div class="card-label">最高（1位）</div>
+    <div class="card-value">659.8<span class="card-unit">件</span></div>
+    <div class="card-sub">大阪府</div>
+  </div>
+  <div class="card bot">
+    <div class="card-label">最低（47位）</div>
+    <div class="card-value">167.9<span class="card-unit">件</span></div>
+    <div class="card-sub">長崎県</div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search" placeholder="都道府県名で絞り込み…" oninput="filterTable()">
+  </div>
+  <div class="result-count" id="count">47都道府県を表示中</div>
+</div>
+
+<div class="table-wrap">
+  <table id="ranking-table">
+    <thead>
+      <tr>
+        <th class="sortable" onclick="sortTable('rank')">順位</th>
+        <th>都道府県</th>
+        <th class="sortable num" onclick="sortTable('rate')">犯罪率<br><span style="font-weight:400;font-size:10px">（10万人あたり）</span></th>
+        <th class="sortable num" onclick="sortTable('count')">認知件数</th>
+        <th class="sortable num" onclick="sortTable('pop')">人口</th>
+        <th class="num" style="min-width:90px">比率バー</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div>1位（最高）</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>2位</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e67e22"></div>3位</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c0392b;opacity:.4"></div>4〜5位</div>
+  <div class="legend-item" style="margin-left:8px"><div class="legend-dot" style="background:#1a6fa8"></div>47位（最低）</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2980b9"></div>46位</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div>45位</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a6fa8;opacity:.4"></div>43〜44位</div>
+  <div class="legend-item" style="margin-left:8px"><div class="legend-dot" style="background:#4a8fc8"></div>全国平均ライン</div>
+</div>
+
+<footer>
+  <div class="channel-tag">日本安全白書</div><br>
+  出典：警察庁「令和7年1〜12月犯罪統計【確定値】」第４表 ／ 総務省「人口推計（令和6年10月1日現在）」<br>
+  犯罪率＝窃盗認知件数÷都道府県人口×100,000　※人口は総務省推計値<br>
+  確認日：2026年4月30日　／　本データは警察庁・総務省の公式統計に基づく参考資料です。
+</footer>
+
+<script>
+const RAW = [
+  { rank: 1,  pref: "大阪府",   rate: 659.8, count: 57993,  pop: 8790000 },
+  { rank: 2,  pref: "茨城県",   rate: 579.7, count: 16464,  pop: 2840000 },
+  { rank: 3,  pref: "群馬県",   rate: 575.7, count: 10995,  pop: 1910000 },
+  { rank: 4,  pref: "埼玉県",   rate: 514.2, count: 37948,  pop: 7380000 },
+  { rank: 5,  pref: "栃木県",   rate: 494.6, count: 9423,   pop: 1905000 },
+  { rank: 6,  pref: "福岡県",   rate: 485.7, count: 24964,  pop: 5140000 },
+  { rank: 7,  pref: "千葉県",   rate: 458.6, count: 28940,  pop: 6310000 },
+  { rank: 8,  pref: "愛知県",   rate: 450.2, count: 34038,  pop: 7560000 },
+  { rank: 9,  pref: "東京都",   rate: 439.9, count: 61940,  pop: 14080000 },
+  { rank: 10, pref: "三重県",   rate: 419.1, count: 7293,   pop: 1740000 },
+  { rank: 11, pref: "兵庫県",   rate: 416.9, count: 22428,  pop: 5380000 },
+  { rank: 12, pref: "沖縄県",   rate: 401.1, count: 5896,   pop: 1470000 },
+  { rank: 13, pref: "岐阜県",   rate: 395.9, count: 7689,   pop: 1942000 },
+  { rank: 14, pref: "岡山県",   rate: 363.9, count: 6786,   pop: 1865000 },
+  { rank: 15, pref: "高知県",   rate: 362.1, count: 2437,   pop: 673000 },
+  { rank: 16, pref: "福島県",   rate: 361.4, count: 6393,   pop: 1769000 },
+  { rank: 17, pref: "愛媛県",   rate: 359.9, count: 4704,   pop: 1307000 },
+  { rank: 18, pref: "神奈川県", rate: 352.9, count: 32643,  pop: 9250000 },
+  { rank: 19, pref: "広島県",   rate: 345.9, count: 9548,   pop: 2760000 },
+  { rank: 20, pref: "滋賀県",   rate: 345.6, count: 4890,   pop: 1415000 },
+  { rank: 21, pref: "香川県",   rate: 343.3, count: 3203,   pop: 933000 },
+  { rank: 22, pref: "石川県",   rate: 339.6, count: 3759,   pop: 1107000 },
+  { rank: 23, pref: "富山県",   rate: 334.0, count: 3377,   pop: 1011000 },
+  { rank: 24, pref: "山梨県",   rate: 331.4, count: 2638,   pop: 796000 },
+  { rank: 25, pref: "京都府",   rate: 325.0, count: 8267,   pop: 2544000 },
+  { rank: 26, pref: "佐賀県",   rate: 314.8, count: 2518,   pop: 800000 },
+  { rank: 27, pref: "宮城県",   rate: 314.0, count: 7096,   pop: 2260000 },
+  { rank: 28, pref: "徳島県",   rate: 303.9, count: 2115,   pop: 696000 },
+  { rank: 29, pref: "静岡県",   rate: 298.5, count: 10625,  pop: 3560000 },
+  { rank: 30, pref: "新潟県",   rate: 294.4, count: 6252,   pop: 2124000 },
+  { rank: 31, pref: "鹿児島県", rate: 288.1, count: 4511,   pop: 1566000 },
+  { rank: 32, pref: "奈良県",   rate: 286.4, count: 3737,   pop: 1305000 },
+  { rank: 33, pref: "福井県",   rate: 283.1, count: 2126,   pop: 751000 },
+  { rank: 34, pref: "鳥取県",   rate: 279.6, count: 1524,   pop: 545000 },
+  { rank: 35, pref: "北海道",   rate: 277.2, count: 14247,  pop: 5140000 },
+  { rank: 36, pref: "宮崎県",   rate: 276.2, count: 2922,   pop: 1058000 },
+  { rank: 37, pref: "和歌山県", rate: 268.9, count: 2409,   pop: 896000 },
+  { rank: 38, pref: "長野県",   rate: 261.3, count: 5274,   pop: 2018000 },
+  { rank: 39, pref: "熊本県",   rate: 255.0, count: 4386,   pop: 1720000 },
+  { rank: 40, pref: "山口県",   rate: 242.5, count: 3128,   pop: 1290000 },
+  { rank: 41, pref: "青森県",   rate: 225.0, count: 2628,   pop: 1168000 },
+  { rank: 42, pref: "大分県",   rate: 204.2, count: 2261,   pop: 1107000 },
+  { rank: 43, pref: "島根県",   rate: 200.0, count: 1302,   pop: 651000 },
+  { rank: 44, pref: "岩手県",   rate: 194.1, count: 2257,   pop: 1163000 },
+  { rank: 45, pref: "山形県",   rate: 177.4, count: 1815,   pop: 1023000 },
+  { rank: 46, pref: "秋田県",   rate: 175.2, count: 1586,   pop: 905000 },
+  { rank: 47, pref: "長崎県",   rate: 167.9, count: 2132,   pop: 1270000 },
+];
+
+const AVG_RATE = 401.5;
+const AVG_INSERT_AFTER_RANK = 11; // 11位(411.5)と12位(401.1)の間に挿入
+const MAX_RATE = 659.8;
+const TOTAL = 47;
+
+let currentSort = { key: 'rank', dir: 'asc' };
+let filterText = '';
+
+function rowClass(rank) {
+  if (rank === 1)  return 'top1';
+  if (rank === 2)  return 'top2';
+  if (rank === 3)  return 'top3';
+  if (rank === 4)  return 'top4';
+  if (rank === 5)  return 'top5';
+  if (rank === TOTAL)     return 'bot1';
+  if (rank === TOTAL - 1) return 'bot2';
+  if (rank === TOTAL - 2) return 'bot3';
+  if (rank === TOTAL - 3) return 'bot4';
+  if (rank === TOTAL - 4) return 'bot5';
+  return '';
+}
+
+function fmt(n) { return n.toLocaleString('ja-JP'); }
+
+function buildRows(data) {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  // 全国平均行を差し込む位置を決定（犯罪率ソート降順時のみ）
+  const insertAvg = (currentSort.key === 'rate' && currentSort.dir === 'desc') ||
+                    (currentSort.key === 'rank' && currentSort.dir === 'asc');
+
+  let avgInserted = false;
+
+  data.forEach(d => {
+    // 全国平均ライン（犯罪率ソート降順・rank昇順のとき）
+    if (insertAvg && !avgInserted && d.rate < AVG_RATE) {
+      const avgTr = document.createElement('tr');
+      avgTr.className = 'avg-row';
+      avgTr.innerHTML = `
+        <td><span class="rank-badge" style="width:auto;padding:0 6px;">─</span></td>
+        <td>全国平均<span class="avg-tag">基準</span></td>
+        <td class="num">${AVG_RATE.toFixed(1)}</td>
+        <td class="num">─</td>
+        <td class="num">─</td>
+        <td class="num">
+          <div class="bar-wrap"><div class="bar-fill" style="width:${(AVG_RATE/MAX_RATE*100).toFixed(1)}%;background:var(--avg-line)"></div></div>
+        </td>`;
+      tbody.appendChild(avgTr);
+      avgInserted = true;
+    }
+
+    const tr = document.createElement('tr');
+    tr.className = rowClass(d.rank);
+    const barW = (d.rate / MAX_RATE * 100).toFixed(1);
+    tr.innerHTML = `
+      <td><span class="rank-badge">${d.rank}</span></td>
+      <td>${d.pref}</td>
+      <td class="num"><strong>${d.rate.toFixed(1)}</strong> 件</td>
+      <td class="num">${fmt(d.count)} 件</td>
+      <td class="num">${fmt(d.pop)} 人</td>
+      <td class="num"><div class="bar-wrap"><div class="bar-fill" style="width:${barW}%"></div></div></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // 末尾に平均（ソートが非rate/rank系の場合）
+  if (!avgInserted && data.length > 0) {
+    const avgTr = document.createElement('tr');
+    avgTr.className = 'avg-row';
+    avgTr.innerHTML = `
+      <td><span class="rank-badge" style="width:auto;padding:0 6px;">─</span></td>
+      <td>全国平均<span class="avg-tag">基準</span></td>
+      <td class="num">${AVG_RATE.toFixed(1)}</td>
+      <td class="num">─</td>
+      <td class="num">─</td>
+      <td class="num">
+        <div class="bar-wrap"><div class="bar-fill" style="width:${(AVG_RATE/MAX_RATE*100).toFixed(1)}%;background:var(--avg-line)"></div></div>
+      </td>`;
+    tbody.appendChild(avgTr);
+  }
+}
+
+function filterTable() {
+  filterText = document.getElementById('search').value.trim();
+  render();
+}
+
+function sortTable(key) {
+  const th_map = { rank: 0, pref: 1, rate: 2, count: 3, pop: 4 };
+  if (currentSort.key === key) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort = { key, dir: key === 'rank' ? 'asc' : 'desc' };
+  }
+  // ヘッダー更新
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  const ths = document.querySelectorAll('thead th.sortable');
+  const keyIdx = ['rank','','rate','count','pop'].indexOf(key);
+  const targetTh = document.querySelectorAll('thead th')[keyIdx === -1 ? 0 : keyIdx];
+  if (targetTh) {
+    targetTh.classList.add(currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  }
+  render();
+}
+
+function render() {
+  let data = [...RAW];
+  if (filterText) {
+    data = data.filter(d => d.pref.includes(filterText));
+  }
+  data.sort((a, b) => {
+    const v = a[currentSort.key] < b[currentSort.key] ? -1 : a[currentSort.key] > b[currentSort.key] ? 1 : 0;
+    return currentSort.dir === 'asc' ? v : -v;
+  });
+  buildRows(data);
+  const cnt = data.length;
+  document.getElementById('count').textContent =
+    filterText ? `${cnt}件ヒット（全47都道府県中）` : `47都道府県を表示中`;
+}
+
+// 初回描画
+render();
+// 初期ヘッダー
+document.querySelectorAll('thead th')[0].classList.add('sort-asc');
+</script>
+</body>
+</html>
